@@ -8,51 +8,38 @@ source("functions_with_median.R")
 
 # Declare features and units
 
-# features <- c(
-#   "qnet",	"inal_auc",	"ical_auc",	"apd90",	"apd50",	"apd_tri",	"cad90",	"cad50",	
-#   "cad_tri",	"dvmdt_repol",	"dvmdt_peak",	"vm_peak",	"vm_dia",	"ca_peak",	"ca_dia"
-# )
-# 
-# units <-c ("", "", "", "", "", "", "", "",
-#            "", "", "", "", "", "", "")
+features <- c(
+  "qnet",	"inal_auc",	"ical_auc",	"apd90",	"apd50",	"apd_tri",	"cad90",	"cad50",
+  "cad_tri",	"dvmdt_repol",	"dvmdt_peak",	"vm_peak",	"vm_dia",	"ca_peak",	"ca_dia"
+)
 
+units <-c ("", "", "", "", "", "", "", "",
+           "", "", "", "", "", "", "")
 
-features <- c("qnet",	"inal_auc")
-units <-c ("", "")
-
-# Declare the file paths
-## For 12-16 train-test
-### dengan single-biomarker
+# Declare paths for the file input
 filepath_training <- "data/ordstatic_zscore_train.csv"
 filepath_testing <- "data/ordstatic_zscore_val.csv"
-### dengan multi-biomarkers (dimension >= 2)
-# filepath_training <- "data/standardized_12drugs_biomarkers.csv"
-# filepath_testing <- "data/standardized_16drugs_biomarkers.csv"
-## FOR 28 Training
-# filepath_training <- "data/qnet_qt_avg_28drugs.csv"
-# filepath_testing <- "data/qnet_qt_avg_28drugs.csv"
 
 # Set feature dimension (how many feature pair)
-dimension <-1
-# dimension <-1
+dimension <-1  # can be changed to 2 (double-biomarker); or 3; 4; 5; 6
 
 # Create pairsdf with all unique combinations
 pairsdf <- pairsdfinitfun(features = features, units = units, dimension = dimension)
 
 # Create the results folder
-results_folder <- "results_ordstatci/single_biom"
+results_folder <- "results/single_biom"
 
-# Choose whether data needs to be normalized
-is_normalized <- FALSE
+# Choose whether data needs to be normalized.
+is_normalized <- FALSE  #
 
-# Choose how many attemps required before skipping the fitting process (when divergence is found)
-max_attempts <- 10000 # 10, 1000, 10000
+# Choose how many attempts are required before skipping the fitting process (when divergence is found)
+max_attempts <- 10000 # 1000
 
-# Choose how many tests required for evaluating model performance
+# Choose how many tests are required for evaluating model performance
 num_tests <- 10000 #1, 1000, 10000
 
 # Register parallel backend
-numCores <- 8
+numCores <- 6
 
 # Check if the folder exists
 if (!dir.exists(results_folder)) {
