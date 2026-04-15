@@ -1,4 +1,44 @@
-# multibiomarker_olr_ordstatic
-This repository contains all the code to perform multivariate ordinal logistic regression (OLR) analysis for predicting pro-arrhythmic risk of 28-CiPA reference drugs. The input is biomarkers derived from an _in silico_ single-cell electrophysiology (EP) simulation using a static CiPAORd framework (replacing Markov-based dynamic IKR formulation with standard conductance-scaling approach). A total of 15 candidate biomarkers are fed to the OLR model independently (single-input scheme; _n_ = 1) or in combination (2, 3, 4, 5, 6). The maximum combination pair is limited to 6 to ensure biological interpretability and statistical robustness, preventing the "black-box" complexity and overfitting common in high-dimensional models.
-To run a single-input mode, set the "dimension <- 1". For 2-biomarker input (e.g., qNet paired with apd90), set the dimension <- 2. And so on until _n_ = 6 ("dimension <- 6").
-Put the input data (biomarker values) in a directory: "/data/". The input data is divided into 2 files: 1) "merged_biomarkers_zscore_train.csv" (contains biomarker values from 12 drugs as the training set), and 2) "merged_biomarkers_zscore_val.csv" (contains the validation set). Please note that the biomarker values in this file have already undergone the standardization (z-core normalization). For the validation set, the biomarker values are standardized using the mean and standard deviation values from the training set to prevent information leakage and enhance numerical stability during the optimization process in the validation stage.
+---
+
+## Data
+
+Input biomarker values are pre-processed and split into two files under `/data/`:
+
+| File | Description |
+|------|-------------|
+| `merged_biomarkers_zscore_train.csv` | Training set — 12 drugs, biomarker values z-score normalized |
+| `merged_biomarkers_zscore_val.csv` | Validation set — normalized using training set mean and SD to prevent data leakage |
+
+> **Note:** Standardization of the validation set using training statistics prevents information leakage and improves numerical stability during optimization.
+
+---
+
+## Usage
+
+Set the `dimension` variable in the main script to control the number of biomarker inputs:
+
+```r
+dimension <- 1   # Single-input mode (each biomarker evaluated independently)
+dimension <- 2   # All pairwise combinations (e.g., qNet + APD90)
+dimension <- 3   # All 3-biomarker combinations
+# ... up to
+dimension <- 6   # Maximum supported combination size
+```
+
+Then run the script in R:
+
+```r
+source("main.R")
+```
+
+---
+
+## Requirements
+
+- R (≥ 4.x recommended)
+- R packages: `MASS`, `pROC`, `ggplot2` , `readr` , `foreach`, `doParallel`
+
+---
+
+## Contact
+anary@kumoh.ac.kr
