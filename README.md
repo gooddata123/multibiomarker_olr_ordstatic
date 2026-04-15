@@ -1,4 +1,16 @@
+# multibiomarker_olr_ordstatic
+
+Multivariate Ordinal Logistic Regression (OLR) for pro-arrhythmic risk prediction of 28 CiPA reference drugs, using biomarkers derived from *in silico* single-cell electrophysiology (EP) simulations under a static CiPAORd framework (i.e., standard conductance-scaling replaces the Markov-based dynamic IKr formulation).
+
 ---
+
+## Overview
+
+This repository implements an OLR-based risk classification pipeline that accepts 15 candidate biomarkers as inputs, evaluated either independently (single-input, *n* = 1) or in combination (*n* = 2–6). The upper limit of six biomarkers per combination is intentional: it preserves biological interpretability and statistical robustness, guarding against the overfitting and "black-box" opacity that arise in high-dimensional models.
+
+---
+
+## Repository Structure
 
 ## Data
 
@@ -20,7 +32,7 @@ Set the `dimension` variable in the main script to control the number of biomark
 ```r
 dimension <- 1   # Single-input mode (each biomarker evaluated independently)
 dimension <- 2   # All pairwise combinations (e.g., qNet + APD90)
-dimension <- 3   # All 3-biomarker combinations
+dimension <- 3   # All 3-biomarker combinations  (e.g., qNet + APD90 + CaD50)
 # ... up to
 dimension <- 6   # Maximum supported combination size
 ```
@@ -39,6 +51,3 @@ source("main.R")
 - R packages: `MASS`, `pROC`, `ggplot2` , `readr` , `foreach`, `doParallel`
 
 ---
-
-## Contact
-anary@kumoh.ac.kr
