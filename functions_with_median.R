@@ -25,15 +25,8 @@ run_all_testing <- function(results_folder = 'results',
                             max_attempts = 1000,
                             num_tests = 10000){
   # Determine if the analysis involves a single feature or multiple features
-  # Ensure features_vector is always a plain character vector.
-  # When called from foreach, pair_row[grep(...)] returns a 1-col data frame;
-  # unlist() + as.character() converts it to a proper character vector so that
-  # data.frame(Feature_Pair = log_filename) names the column correctly.
-  features_vector <- as.character(unlist(features_vector))
-  units_vector    <- as.character(unlist(units_vector))
-
   is_single <- length(features_vector) == 1
-
+  
   # Construct a log file name based on the number of features
   log_filename <- if (!is_single) {
     paste(features_vector, collapse="-")
@@ -136,7 +129,7 @@ run_all_testing <- function(results_folder = 'results',
     th2 <- -th1
     
     # Plot TMS for training dataset
-    label_colors <- c("low" = "green", "intermediate" = "blue", "high" = "red")
+    label_colors <- c("low" = "green4", "intermediate" = "orange", "high" = "red")
     training$risk <- ifelse(training$label == 1, "low",
                             ifelse(training$label == 2, "intermediate", "high"))
     
@@ -192,57 +185,59 @@ run_all_testing <- function(results_folder = 'results',
                      all_or_loocv = all_or_loocv)
     }
     temp_return <- returnNA(log_filename,dimension)
+    temp_return["th1"] <- NA
+    temp_return["th2"] <- NA
     temp_return["Rank_score_training"] <- NA
-    temp_return["Accuracy_cipa_1_training"] <- NA
-    temp_return["Accuracy_cipa_2_training"] <- NA
+    temp_return["Accuracy_th1_training"] <- NA
+    temp_return["Accuracy_th2_training"] <- NA
     temp_return["AUC1_training"] <- NA
     temp_return["AUC2_training"] <- NA
-    temp_return["Sensitivity_cipa_1_training"] <- NA
-    temp_return["Sensitivity_cipa_2_training"] <- NA
-    temp_return["Specificity_cipa_1_training"] <- NA
-    temp_return["Specificity_cipa_2_training"] <- NA
+    temp_return["Sensitivity1_training"] <- NA
+    temp_return["Sensitivity2_training"] <- NA
+    temp_return["Specificity1_training"] <- NA
+    temp_return["Specificity2_training"] <- NA
     temp_return["LR_pos_th1_training"] <- NA
     temp_return["LR_pos_th2_training"] <- NA
     temp_return["LR_neg_th1_training"] <- NA
     temp_return["LR_neg_th2_training"] <- NA
-    temp_return["F1score_cipa_1_training"] <- NA
-    temp_return["F1score_cipa_2_training"] <- NA
+    temp_return["F1score_th1_training"] <- NA
+    temp_return["F1score_th2_training"] <- NA
     temp_return["Classification_error_training"] <- NA
     
     # Median columns — all NA when model did not converge
     temp_return["Rank_score_med"]                            <- NA
-    temp_return["Accuracy_cipa_1_med"]                       <- NA
-    temp_return["Accuracy_cipa_2_med"]                       <- NA
+    temp_return["Accuracy_th1_med"]                       <- NA
+    temp_return["Accuracy_th2_med"]                       <- NA
     temp_return["AUC1_med"]                            <- NA
     temp_return["AUC2_med"]                            <- NA
-    temp_return["Sensitivity_cipa_1_med"]                    <- NA
-    temp_return["Sensitivity_cipa_2_med"]                    <- NA
-    temp_return["Specificity_cipa_1_med"]                    <- NA
-    temp_return["Specificity_cipa_2_med"]                    <- NA
+    temp_return["Sensitivity1_med"]                    <- NA
+    temp_return["Sensitivity2_med"]                    <- NA
+    temp_return["Specificity1_med"]                    <- NA
+    temp_return["Specificity2_med"]                    <- NA
     temp_return["LR_pos_th1_med"]                    <- NA
     temp_return["LR_pos_th2_med"]                    <- NA
     temp_return["LR_neg_th1_med"]                    <- NA
     temp_return["LR_neg_th2_med"]                    <- NA
-    temp_return["F1score_cipa_1_med"]                        <- NA
-    temp_return["F1score_cipa_2_med"]                        <- NA
+    temp_return["F1score_th1_med"]                        <- NA
+    temp_return["F1score_th2_med"]                        <- NA
     temp_return["Classification_error_median_med"]           <- NA
     temp_return["Classification_error_mean_med"]             <- NA
     temp_return["pairwise_med"]      <- NA
     temp_return["Rank_score_training_med"]                   <- NA
-    temp_return["Accuracy_cipa_1_training_med"]              <- NA
-    temp_return["Accuracy_cipa_2_training_med"]              <- NA
+    temp_return["Accuracy_th1_training_med"]              <- NA
+    temp_return["Accuracy_th2_training_med"]              <- NA
     temp_return["AUC1_training_med"]                   <- NA
     temp_return["AUC2_training_med"]                   <- NA
-    temp_return["Sensitivity_cipa_1_training_med"]           <- NA
-    temp_return["Sensitivity_cipa_2_training_med"]           <- NA
-    temp_return["Specificity_cipa_1_training_med"]           <- NA
-    temp_return["Specificity_cipa_2_training_med"]           <- NA
+    temp_return["Sensitivity1_training_med"]           <- NA
+    temp_return["Sensitivity2_training_med"]           <- NA
+    temp_return["Specificity1_training_med"]           <- NA
+    temp_return["Specificity2_training_med"]           <- NA
     temp_return["LR_pos_th1_training_med"]           <- NA
     temp_return["LR_pos_th2_training_med"]           <- NA
     temp_return["LR_neg_th1_training_med"]           <- NA
     temp_return["LR_neg_th2_training_med"]           <- NA
-    temp_return["F1score_cipa_1_training_med"]               <- NA
-    temp_return["F1score_cipa_2_training_med"]               <- NA
+    temp_return["F1score_th1_training_med"]               <- NA
+    temp_return["F1score_th2_training_med"]               <- NA
     temp_return["Classification_error_median_training_med"]  <- NA
     temp_return["Classification_error_mean_training_med"]    <- NA
     
@@ -333,26 +328,29 @@ run_all_testing <- function(results_folder = 'results',
   
   summarydf <- data.frame(
     Feature_Pair = feature_pair_name,
-    Accuracy_cipa_1 = quantile(pmeasures_testing$Accuracy_cipa_1, 0.025),
-    Accuracy_cipa_2 = quantile(pmeasures_testing$Accuracy_cipa_2, 0.025),
+    Accuracy_th1 = quantile(pmeasures_testing$Accuracy_th1, 0.025),
+    Accuracy_th2 = quantile(pmeasures_testing$Accuracy_th2, 0.025),
     AUC1 = quantile(pmeasures_testing$AUC1, 0.025),
     AUC2 = quantile(pmeasures_testing$AUC2, 0.025),
-    Sensitivity_cipa_1 = quantile(pmeasures_testing$Sensitivity_cipa_1, 0.025),
-    Sensitivity_cipa_2 = quantile(pmeasures_testing$Sensitivity_cipa_2, 0.025),
-    Specificity_cipa_1 = quantile(pmeasures_testing$Specificity_cipa_1, 0.025),
-    Specificity_cipa_2 = quantile(pmeasures_testing$Specificity_cipa_2, 0.025),
+    Sensitivity1 = quantile(pmeasures_testing$Sensitivity1, 0.025),
+    Sensitivity2 = quantile(pmeasures_testing$Sensitivity2, 0.025),
+    Specificity1 = quantile(pmeasures_testing$Specificity1, 0.025),
+    Specificity2 = quantile(pmeasures_testing$Specificity2, 0.025),
     LR_pos_th1 = quantile(pmeasures_testing$LR_pos_th1, 0.025),
     LR_pos_th2 = quantile(pmeasures_testing$LR_pos_th2, 0.025),
     LR_neg_th1 = quantile(pmeasures_testing$LR_neg_th1, 0.975),
     LR_neg_th2 = quantile(pmeasures_testing$LR_neg_th2, 0.975),
-    F1score_cipa_1 = quantile(pmeasures_testing$F1score_cipa_1, 0.025),
-    F1score_cipa_2 = quantile(pmeasures_testing$F1score_cipa_2, 0.025),
+    F1score_th1 = quantile(pmeasures_testing$F1score_th1, 0.025),
+    F1score_th2 = quantile(pmeasures_testing$F1score_th2, 0.025),
     Classification_error = mean(pred_err_testing) + 1.96 * sd(pred_err_testing) / sqrt(length(pred_err_testing)),
     pairwise = quantile(pmeasures_testing$Pairwise, 0.025),
     Rank_score = rank_score_testing
   )
   # Add normalized log likelihood value
   summarydf['logLik'] <- logLik(mod)/nrow(training)
+  # Add TMS thresholds
+  summarydf['th1'] <- th1
+  summarydf['th2'] <- th2
   
   # Add Alphas
   for (i in 1:length(alphas)) {
@@ -366,20 +364,20 @@ run_all_testing <- function(results_folder = 'results',
   
   # Add training scores
   summarydf["Rank_score_training"] <- rank_score_training
-  summarydf["Accuracy_cipa_1_training"] <- quantile(pmeasures_training$Accuracy_cipa_1, 0.025)
-  summarydf["Accuracy_cipa_2_training"] <- quantile(pmeasures_training$Accuracy_cipa_2, 0.025)
+  summarydf["Accuracy_th1_training"] <- quantile(pmeasures_training$Accuracy_th1, 0.025)
+  summarydf["Accuracy_th2_training"] <- quantile(pmeasures_training$Accuracy_th2, 0.025)
   summarydf["AUC1_training"] <- quantile(pmeasures_training$AUC1, 0.025)
   summarydf["AUC2_training"] <- quantile(pmeasures_training$AUC2, 0.025)
-  summarydf["Sensitivity_cipa_1_training"] <- quantile(pmeasures_training$Sensitivity_cipa_1, 0.025)
-  summarydf["Sensitivity_cipa_2_training"] <- quantile(pmeasures_training$Sensitivity_cipa_2, 0.025)
-  summarydf["Specificity_cipa_1_training"] <- quantile(pmeasures_training$Specificity_cipa_1, 0.025)
-  summarydf["Specificity_cipa_2_training"] <- quantile(pmeasures_training$Specificity_cipa_2, 0.025)
+  summarydf["Sensitivity1_training"] <- quantile(pmeasures_training$Sensitivity1, 0.025)
+  summarydf["Sensitivity2_training"] <- quantile(pmeasures_training$Sensitivity2, 0.025)
+  summarydf["Specificity1_training"] <- quantile(pmeasures_training$Specificity1, 0.025)
+  summarydf["Specificity2_training"] <- quantile(pmeasures_training$Specificity2, 0.025)
   summarydf["LR_pos_th1_training"] <- quantile(pmeasures_training$LR_pos_th1, 0.025)
   summarydf["LR_pos_th2_training"] <- quantile(pmeasures_training$LR_pos_th2, 0.025)
   summarydf["LR_neg_th1_training"] <- quantile(pmeasures_training$LR_neg_th1, 0.975)
   summarydf["LR_neg_th2_training"] <- quantile(pmeasures_training$LR_neg_th2, 0.975)
-  summarydf["F1score_cipa_1_training"] <- quantile(pmeasures_training$F1score_cipa_1, 0.025)
-  summarydf["F1score_cipa_2_training"] <- quantile(pmeasures_training$F1score_cipa_2, 0.025)
+  summarydf["F1score_th1_training"] <- quantile(pmeasures_training$F1score_th1, 0.025)
+  summarydf["F1score_th2_training"] <- quantile(pmeasures_training$F1score_th2, 0.025)
   summarydf["Classification_error_training"] <- mean(pred_err_training) + 1.96 * sd(pred_err_training) / sqrt(length(pred_err_training))
   
   # ================================================
@@ -397,40 +395,40 @@ run_all_testing <- function(results_folder = 'results',
   
   # Testing — median metrics
   summarydf["Rank_score_med"]                            <- rank_score_testing_med
-  summarydf["Accuracy_cipa_1_med"]                       <- quantile(pmeasures_testing$Accuracy_cipa_1,   0.5)
-  summarydf["Accuracy_cipa_2_med"]                       <- quantile(pmeasures_testing$Accuracy_cipa_2,   0.5)
+  summarydf["Accuracy_th1_med"]                       <- quantile(pmeasures_testing$Accuracy_th1,   0.5)
+  summarydf["Accuracy_th2_med"]                       <- quantile(pmeasures_testing$Accuracy_th2,   0.5)
   summarydf["AUC1_med"]                            <- quantile(pmeasures_testing$AUC1,        0.5)
   summarydf["AUC2_med"]                            <- quantile(pmeasures_testing$AUC2,        0.5)
-  summarydf["Sensitivity_cipa_1_med"]                    <- quantile(pmeasures_testing$Sensitivity_cipa_1, 0.5)
-  summarydf["Sensitivity_cipa_2_med"]                    <- quantile(pmeasures_testing$Sensitivity_cipa_2, 0.5)
-  summarydf["Specificity_cipa_1_med"]                    <- quantile(pmeasures_testing$Specificity_cipa_1, 0.5)
-  summarydf["Specificity_cipa_2_med"]                    <- quantile(pmeasures_testing$Specificity_cipa_2, 0.5)
+  summarydf["Sensitivity1_med"]                    <- quantile(pmeasures_testing$Sensitivity1, 0.5)
+  summarydf["Sensitivity2_med"]                    <- quantile(pmeasures_testing$Sensitivity2, 0.5)
+  summarydf["Specificity1_med"]                    <- quantile(pmeasures_testing$Specificity1, 0.5)
+  summarydf["Specificity2_med"]                    <- quantile(pmeasures_testing$Specificity2, 0.5)
   summarydf["LR_pos_th1_med"]                    <- quantile(pmeasures_testing$LR_pos_th1, 0.5)
   summarydf["LR_pos_th2_med"]                    <- quantile(pmeasures_testing$LR_pos_th2, 0.5)
   summarydf["LR_neg_th1_med"]                    <- quantile(pmeasures_testing$LR_neg_th1, 0.5)
   summarydf["LR_neg_th2_med"]                    <- quantile(pmeasures_testing$LR_neg_th2, 0.5)
-  summarydf["F1score_cipa_1_med"]                        <- quantile(pmeasures_testing$F1score_cipa_1,    0.5)
-  summarydf["F1score_cipa_2_med"]                        <- quantile(pmeasures_testing$F1score_cipa_2,    0.5)
+  summarydf["F1score_th1_med"]                        <- quantile(pmeasures_testing$F1score_th1,    0.5)
+  summarydf["F1score_th2_med"]                        <- quantile(pmeasures_testing$F1score_th2,    0.5)
   summarydf["Classification_error_median_med"]           <- median(pred_err_testing)
   summarydf["Classification_error_mean_med"]             <- mean(pred_err_testing)
   summarydf["pairwise_med"]      <- quantile(pmeasures_testing$Pairwise,          0.5)
   
   # Training — median metrics
   summarydf["Rank_score_training_med"]                   <- rank_score_training_med
-  summarydf["Accuracy_cipa_1_training_med"]              <- quantile(pmeasures_training$Accuracy_cipa_1,   0.5)
-  summarydf["Accuracy_cipa_2_training_med"]              <- quantile(pmeasures_training$Accuracy_cipa_2,   0.5)
+  summarydf["Accuracy_th1_training_med"]              <- quantile(pmeasures_training$Accuracy_th1,   0.5)
+  summarydf["Accuracy_th2_training_med"]              <- quantile(pmeasures_training$Accuracy_th2,   0.5)
   summarydf["AUC1_training_med"]                   <- quantile(pmeasures_training$AUC1,        0.5)
   summarydf["AUC2_training_med"]                   <- quantile(pmeasures_training$AUC2,        0.5)
-  summarydf["Sensitivity_cipa_1_training_med"]           <- quantile(pmeasures_training$Sensitivity_cipa_1, 0.5)
-  summarydf["Sensitivity_cipa_2_training_med"]           <- quantile(pmeasures_training$Sensitivity_cipa_2, 0.5)
-  summarydf["Specificity_cipa_1_training_med"]           <- quantile(pmeasures_training$Specificity_cipa_1, 0.5)
-  summarydf["Specificity_cipa_2_training_med"]           <- quantile(pmeasures_training$Specificity_cipa_2, 0.5)
+  summarydf["Sensitivity1_training_med"]           <- quantile(pmeasures_training$Sensitivity1, 0.5)
+  summarydf["Sensitivity2_training_med"]           <- quantile(pmeasures_training$Sensitivity2, 0.5)
+  summarydf["Specificity1_training_med"]           <- quantile(pmeasures_training$Specificity1, 0.5)
+  summarydf["Specificity2_training_med"]           <- quantile(pmeasures_training$Specificity2, 0.5)
   summarydf["LR_pos_th1_training_med"]           <- quantile(pmeasures_training$LR_pos_th1, 0.5)
   summarydf["LR_pos_th2_training_med"]           <- quantile(pmeasures_training$LR_pos_th2, 0.5)
   summarydf["LR_neg_th1_training_med"]           <- quantile(pmeasures_training$LR_neg_th1, 0.5)
   summarydf["LR_neg_th2_training_med"]           <- quantile(pmeasures_training$LR_neg_th2, 0.5)
-  summarydf["F1score_cipa_1_training_med"]               <- quantile(pmeasures_training$F1score_cipa_1,    0.5)
-  summarydf["F1score_cipa_2_training_med"]               <- quantile(pmeasures_training$F1score_cipa_2,    0.5)
+  summarydf["F1score_th1_training_med"]               <- quantile(pmeasures_training$F1score_th1,    0.5)
+  summarydf["F1score_th2_training_med"]               <- quantile(pmeasures_training$F1score_th2,    0.5)
   summarydf["Classification_error_median_training_med"]  <- median(pred_err_training)
   summarydf["Classification_error_mean_training_med"]    <- mean(pred_err_training)
   
@@ -445,15 +443,8 @@ run_all_training <- function(results_folder = 'results',
                              is_normalized = FALSE,
                              max_attempts = 1000){
   # Determine if the analysis involves a single feature or multiple features
-  # Ensure features_vector is always a plain character vector.
-  # When called from foreach, pair_row[grep(...)] returns a 1-col data frame;
-  # unlist() + as.character() converts it to a proper character vector so that
-  # data.frame(Feature_Pair = log_filename) names the column correctly.
-  features_vector <- as.character(unlist(features_vector))
-  units_vector    <- as.character(unlist(units_vector))
-
   is_single <- length(features_vector) == 1
-
+  
   # Construct a log file name based on the number of features
   log_filename <- if (!is_single) {
     paste(features_vector, collapse="-")
@@ -543,7 +534,7 @@ run_all_training <- function(results_folder = 'results',
     th2 <- -th1
     
     # Plot TMS for training dataset
-    label_colors <- c("low" = "green", "intermediate" = "blue", "high" = "red")
+    label_colors <- c("low" = "green4", "intermediate" = "orange", "high" = "red")
     all_data$risk <- ifelse(all_data$label == 1, "low",
                             ifelse(all_data$label == 2, "intermediate", "high"))
     
@@ -618,20 +609,20 @@ run_all_training <- function(results_folder = 'results',
   
   summarydf <- data.frame(
     Feature_Pair = feature_pair_name,
-    Accuracy_cipa_1 = quantile(pmeasures$Accuracy_cipa_1, 0.025),
-    Accuracy_cipa_2 = quantile(pmeasures$Accuracy_cipa_2, 0.025),
+    Accuracy_th1 = quantile(pmeasures$Accuracy_th1, 0.025),
+    Accuracy_th2 = quantile(pmeasures$Accuracy_th2, 0.025),
     AUC1 = quantile(pmeasures$AUC1, 0.025),
     AUC2 = quantile(pmeasures$AUC2, 0.025),
-    Sensitivity_cipa_1 = quantile(pmeasures$Sensitivity_cipa_1, 0.025),
-    Sensitivity_cipa_2 = quantile(pmeasures$Sensitivity_cipa_2, 0.025),
-    Specificity_cipa_1 = quantile(pmeasures$Specificity_cipa_1, 0.025),
-    Specificity_cipa_2 = quantile(pmeasures$Specificity_cipa_2, 0.025),
+    Sensitivity1 = quantile(pmeasures$Sensitivity1, 0.025),
+    Sensitivity2 = quantile(pmeasures$Sensitivity2, 0.025),
+    Specificity1 = quantile(pmeasures$Specificity1, 0.025),
+    Specificity2 = quantile(pmeasures$Specificity2, 0.025),
     LR_pos_th1 = quantile(pmeasures$LR_pos_th1, 0.025),
     LR_pos_th2 = quantile(pmeasures$LR_pos_th2, 0.025),
     LR_neg_th1 = quantile(pmeasures$LR_neg_th1, 0.975),
     LR_neg_th2 = quantile(pmeasures$LR_neg_th2, 0.975),
-    F1score_cipa_1 = quantile(pmeasures$F1score_cipa_1, 0.025),
-    F1score_cipa_2 = quantile(pmeasures$F1score_cipa_2, 0.025),
+    F1score_th1 = quantile(pmeasures$F1score_th1, 0.025),
+    F1score_th2 = quantile(pmeasures$F1score_th2, 0.025),
     Classification_error = mean(pred_err) + 1.96 * sd(pred_err) / sqrt(length(pred_err)),
     pairwise = quantile(pmeasures$Pairwise, 0.025),
     Rank_score = rank_score
@@ -661,15 +652,8 @@ run_all_loocv <- function(results_folder = 'results',
                           is_normalized = FALSE,
                           max_attempts = 1000) {
   # Determine if the analysis involves a single feature or multiple features
-  # Ensure features_vector is always a plain character vector.
-  # When called from foreach, pair_row[grep(...)] returns a 1-col data frame;
-  # unlist() + as.character() converts it to a proper character vector so that
-  # data.frame(Feature_Pair = log_filename) names the column correctly.
-  features_vector <- as.character(unlist(features_vector))
-  units_vector    <- as.character(unlist(units_vector))
-
   is_single <- length(features_vector) == 1
-
+  
   # Construct a log file name based on the number of features
   log_filename <- if (!is_single) {
     paste(features_vector, collapse="-")
@@ -799,20 +783,20 @@ run_all_loocv <- function(results_folder = 'results',
   
   summarydf <- data.frame(
     Feature_Pair = feature_pair_name,
-    Accuracy_cipa_1 = quantile(pmeasures$Accuracy_cipa_1, 0.025),
-    Accuracy_cipa_2 = quantile(pmeasures$Accuracy_cipa_2, 0.025),
+    Accuracy_th1 = quantile(pmeasures$Accuracy_th1, 0.025),
+    Accuracy_th2 = quantile(pmeasures$Accuracy_th2, 0.025),
     AUC1 = quantile(pmeasures$AUC1, 0.025),
     AUC2 = quantile(pmeasures$AUC2, 0.025),
-    Sensitivity_cipa_1 = quantile(pmeasures$Sensitivity_cipa_1, 0.025),
-    Sensitivity_cipa_2 = quantile(pmeasures$Sensitivity_cipa_2, 0.025),
-    Specificity_cipa_1 = quantile(pmeasures$Specificity_cipa_1, 0.025),
-    Specificity_cipa_2 = quantile(pmeasures$Specificity_cipa_2, 0.025),
+    Sensitivity1 = quantile(pmeasures$Sensitivity1, 0.025),
+    Sensitivity2 = quantile(pmeasures$Sensitivity2, 0.025),
+    Specificity1 = quantile(pmeasures$Specificity1, 0.025),
+    Specificity2 = quantile(pmeasures$Specificity2, 0.025),
     LR_pos_th1 = quantile(pmeasures$LR_pos_th1, 0.025),
     LR_pos_th2 = quantile(pmeasures$LR_pos_th2, 0.025),
     LR_neg_th1 = quantile(pmeasures$LR_neg_th1, 0.975),
     LR_neg_th2 = quantile(pmeasures$LR_neg_th2, 0.975),
-    F1score_cipa_1 = quantile(pmeasures$F1score_cipa_1, 0.025),
-    F1score_cipa_2 = quantile(pmeasures$F1score_cipa_2, 0.025),
+    F1score_th1 = quantile(pmeasures$F1score_th1, 0.025),
+    F1score_th2 = quantile(pmeasures$F1score_th2, 0.025),
     Classification_error = mean(pred_err) + 1.96 * sd(pred_err) / sqrt(length(pred_err)),
     pairwise = quantile(pmeasures$Pairwise, 0.025),
     Rank_score = rank_score
@@ -885,27 +869,27 @@ pmeasuresfun_loocv <- function(data, label_values, tms_name = "TMS", all_or_looc
   fp_cipa_2 = confusion_matrix[3,1] + confusion_matrix[3,2]
   fn_cipa_2 = confusion_matrix[1,3] + confusion_matrix[2,3]
   
-  f1score_cipa_1 <- 2.0 * tp_cipa_1 / (2.0 * tp_cipa_1 + fp_cipa_1 + fn_cipa_1)
-  f1score_cipa_2 <- 2.0 * tp_cipa_2 / (2.0 * tp_cipa_2 + fp_cipa_2 + fn_cipa_2)
+  F1score_th1 <- 2.0 * tp_cipa_1 / (2.0 * tp_cipa_1 + fp_cipa_1 + fn_cipa_1)
+  F1score_th2 <- 2.0 * tp_cipa_2 / (2.0 * tp_cipa_2 + fp_cipa_2 + fn_cipa_2)
   
-  accuracy_cipa_1 <- (tp_cipa_1 + tn_cipa_1) / sum(confusion_matrix)
-  accuracy_cipa_2 <- (tp_cipa_2 + tn_cipa_2) / sum(confusion_matrix)
+  Accuracy_th1 <- (tp_cipa_1 + tn_cipa_1) / sum(confusion_matrix)
+  Accuracy_th2 <- (tp_cipa_2 + tn_cipa_2) / sum(confusion_matrix)
   
-  sensitivity_cipa_1 <- tp_cipa_1 / (tp_cipa_1 + fn_cipa_1)
-  sensitivity_cipa_2 <- tp_cipa_2 / (tp_cipa_2 + fn_cipa_2)
+  Sensitivity1 <- tp_cipa_1 / (tp_cipa_1 + fn_cipa_1)
+  Sensitivity2 <- tp_cipa_2 / (tp_cipa_2 + fn_cipa_2)
   
-  specificity_cipa_1 <- tn_cipa_1 / (tn_cipa_1 + fp_cipa_1)
-  specificity_cipa_2 <- tn_cipa_2 / (tn_cipa_2 + fp_cipa_2)
+  Specificity1 <- tn_cipa_1 / (tn_cipa_1 + fp_cipa_1)
+  Specificity2 <- tn_cipa_2 / (tn_cipa_2 + fp_cipa_2)
   
   # Add random number to LR+ and LR- to prevent zero devision
   u <- 1e-6
   sd <- 1e-12
   
-  lr_positive_cipa_1 <- (sensitivity_cipa_1 + rnorm(1, mean = u, sd = sd)) / (1 - specificity_cipa_1 + rnorm(1, mean = u, sd = sd))
-  lr_positive_cipa_2 <- (sensitivity_cipa_2 + rnorm(1, mean = u, sd = sd)) / (1 - specificity_cipa_2 + rnorm(1, mean = u, sd = sd))
+  lr_positive_cipa_1 <- (Sensitivity1 + rnorm(1, mean = u, sd = sd)) / (1 - Specificity1 + rnorm(1, mean = u, sd = sd))
+  lr_positive_cipa_2 <- (Sensitivity2 + rnorm(1, mean = u, sd = sd)) / (1 - Specificity2 + rnorm(1, mean = u, sd = sd))
   
-  lr_negative_cipa_1 <- (1 - sensitivity_cipa_1 + rnorm(1, mean = u, sd = sd)) / (specificity_cipa_1 + rnorm(1, mean = u, sd = sd))
-  lr_negative_cipa_2 <- (1 - sensitivity_cipa_2 + rnorm(1, mean = u, sd = sd)) / (specificity_cipa_2 + rnorm(1, mean = u, sd = sd))
+  lr_negative_cipa_1 <- (1 - Sensitivity1 + rnorm(1, mean = u, sd = sd)) / (Specificity1 + rnorm(1, mean = u, sd = sd))
+  lr_negative_cipa_2 <- (1 - Sensitivity2 + rnorm(1, mean = u, sd = sd)) / (Specificity2 + rnorm(1, mean = u, sd = sd))
   
   auc_scores <- aucrocfun_loocv(testing_data, label_values)
   
@@ -929,16 +913,16 @@ pmeasuresfun_loocv <- function(data, label_values, tms_name = "TMS", all_or_looc
     FP_cipa_2 = fp_cipa_2,
     FN_cipa_1 = fn_cipa_1,
     FN_cipa_2 = fn_cipa_2,
-    F1score_cipa_1 = f1score_cipa_1,
-    F1score_cipa_2 = f1score_cipa_2,
-    Accuracy_cipa_1 = accuracy_cipa_1,
-    Accuracy_cipa_2 = accuracy_cipa_2,
+    F1score_th1 = F1score_th1,
+    F1score_th2 = F1score_th2,
+    Accuracy_th1 = Accuracy_th1,
+    Accuracy_th2 = Accuracy_th2,
     AUC1 = auc_scores[1],
     AUC2 = auc_scores[3],
-    Sensitivity_cipa_1 = sensitivity_cipa_1,
-    Sensitivity_cipa_2 = sensitivity_cipa_2,
-    Specificity_cipa_1 = specificity_cipa_1,
-    Specificity_cipa_2 = specificity_cipa_2,
+    Sensitivity1 = Sensitivity1,
+    Sensitivity2 = Sensitivity2,
+    Specificity1 = Specificity1,
+    Specificity2 = Specificity2,
     LR_pos_th1 = lr_positive_cipa_1,
     LR_pos_th2 = lr_positive_cipa_2,
     LR_neg_th1 = lr_negative_cipa_1,
@@ -950,27 +934,39 @@ pmeasuresfun_loocv <- function(data, label_values, tms_name = "TMS", all_or_looc
 }
 
 tmsplotfun <- function(data, th1, th2, label_colors, title, file_name, tms_name, tms_unit){
-  data$drug_name <- factor(data$drug_name, levels = unique(data$drug_name[order(data$label)]))
-  tms <- tms_name
+  # Known TdP risk classification (CiPA reference list)
+  high_risk_drugs <- c("sotalol","quinidine","dofetilide","bepridil",
+                       "vandetanib","ibutilide","disopyramide","azimilide")
+  low_risk_drugs  <- c("verapamil","ranolazine","mexiletine","diltiazem",
+                       "tamoxifen","nitrendipine","nifedipine","metoprolol","loratadine")
+
+  # Order drugs by label (low -> intermediate -> high) for y-axis
+  data$drug_name <- factor(data$drug_name,
+                           levels = unique(data$drug_name[order(data$label)]))
+
+  # Build y-axis label color vector matching factor level order
+  drug_levels    <- levels(data$drug_name)
+  yaxis_colors   <- ifelse(drug_levels %in% high_risk_drugs, "red",
+                    ifelse(drug_levels %in% low_risk_drugs,  "green4", "orange"))
+
+  tms  <- tms_name
   plot <- ggplot(data, aes_string(x = tms_name, y = "drug_name", fill = "risk")) +
-    geom_boxplot(color = "black", width = 0.5, size = 0.2, outlier.size = 0.5, outlier.shape = NA) +
-    # geom_point(shape = 21, size = 3, width = 0.5, size = 0.2, outlier.size = 0.5, outlier.shape = NA) +
+    geom_boxplot(color = "black", width = 0.5, size = 0.2,
+                 outlier.size = 0.5, outlier.shape = NA) +
     labs(title = title, x = tms, y = "") +
-    geom_vline(xintercept = th1, linetype = "dashed", color = "blue", size = 1)  +
-    geom_vline(xintercept = th2, linetype = "dashed", color = "red", size = 1)  +
-    scale_fill_manual(values = label_colors) + # Set the fill colors
-    theme(plot.title = element_text(size = 20), # Title font size
-          # Change axis title font sizes
-          axis.title.x = element_text(size = 14), # X axis title font size
-          axis.title.y = element_text(size = 14), # Y axis title font size
-          # Change axis text font sizes
-          axis.text.x = element_text(size = 12), # X axis text font size
-          axis.text.y = element_text(size = 12), # Y axis text font size
-          # Change legend title and text font sizes
-          legend.title = element_text(size = 10), # Legend title font size
-          legend.text = element_text(size = 8) # Legend text font size
+    geom_vline(xintercept = th1, linetype = "dashed", color = "blue", size = 1) +
+    geom_vline(xintercept = th2, linetype = "dashed", color = "red",  size = 1) +
+    scale_fill_manual(values = label_colors) +
+    theme(
+      plot.title       = element_text(size = 16),
+      axis.title.x     = element_text(size = 14),
+      axis.title.y     = element_text(size = 14),
+      axis.text.x      = element_text(size = 12),
+      axis.text.y      = element_text(size = 12, colour = yaxis_colors, face = "bold"),
+      legend.title     = element_text(size = 10),
+      legend.text      = element_text(size = 10)
     )
-  ggsave(file_name, plot, width = 8, height = 6, dpi = 900)
+  ggsave(file_name, plot, width = 6, height = 4, dpi = 900)
 }
 
 scatterplotfun <- function(data, 
@@ -1012,10 +1008,10 @@ scatterplotfun <- function(data,
     z2 <- outer(x, y, Vectorize(function(x, y) calculate_B2(alpha1, alpha2, beta1, beta2, x, y)))
   }
   if (is_training) {
-    title <- "Training dataset"
+    title <- "(A) Training dataset"
     file_name <- "training"
   } else {
-    title <- "Testing dataset"
+    title <- "(B) Testing dataset"
     file_name <- "testing"
   }
   if (is_normalized) {
@@ -1037,10 +1033,10 @@ scatterplotfun <- function(data,
        cex.main = 1.5, 
        cex = 0.5)
   if (is_legend) {
-    legend("bottomright", legend = c("Low", "Intermediate", "High"), fill = c("green", "blue", "red"))
+    legend("bottomright", legend = c("Low", "Intermediate", "High"), fill = c("green4", "orange", "red"))
   }
-  points(data[,idx_model_1][data$label == "1"], data[,idx_model_2][data$label == "1"], col = "green", cex = 0.5)
-  points(data[,idx_model_1][data$label == "2"], data[,idx_model_2][data$label == "2"], col = "blue", cex = 0.5)
+  points(data[,idx_model_1][data$label == "1"], data[,idx_model_2][data$label == "1"], col = "green4", cex = 0.5)
+  points(data[,idx_model_1][data$label == "2"], data[,idx_model_2][data$label == "2"], col = "orange", cex = 0.5)
   points(data[,idx_model_1][data$label == "3"], data[,idx_model_2][data$label == "3"], col = "red", cex = 0.5)
   if (is_converged) {
     abline(a = c1, b = m, col = "blue", lty = 2, lwd = 2)  # Replace 'a' with the intercept if needed
@@ -1162,35 +1158,35 @@ writepmeasuresfun <- function(pmeasures,
                 quantile(pmeasures$AUC2, 0.025),
                 quantile(pmeasures$AUC2, 0.975)),
         logfile)
-  write(sprintf('Accuracy_cipa_1: %.4f (%.4f, %.4f)',
-                median(pmeasures$Accuracy_cipa_1),
-                quantile(pmeasures$Accuracy_cipa_1, 0.025),
-                quantile(pmeasures$Accuracy_cipa_1, 0.975)),
+  write(sprintf('Accuracy_th1: %.4f (%.4f, %.4f)',
+                median(pmeasures$Accuracy_th1),
+                quantile(pmeasures$Accuracy_th1, 0.025),
+                quantile(pmeasures$Accuracy_th1, 0.975)),
         logfile)
-  write(sprintf('Accuracy_cipa_2: %.4f (%.4f, %.4f)',
-                median(pmeasures$Accuracy_cipa_2),
-                quantile(pmeasures$Accuracy_cipa_2, 0.025),
-                quantile(pmeasures$Accuracy_cipa_2, 0.975)),
+  write(sprintf('Accuracy_th2: %.4f (%.4f, %.4f)',
+                median(pmeasures$Accuracy_th2),
+                quantile(pmeasures$Accuracy_th2, 0.025),
+                quantile(pmeasures$Accuracy_th2, 0.975)),
         logfile)
-  write(sprintf('Sensitivity_cipa_1: %.4f (%.4f, %.4f)',
-                median(pmeasures$Sensitivity_cipa_1),
-                quantile(pmeasures$Sensitivity_cipa_1, 0.025),
-                quantile(pmeasures$Sensitivity_cipa_1, 0.975)),
+  write(sprintf('Sensitivity1: %.4f (%.4f, %.4f)',
+                median(pmeasures$Sensitivity1),
+                quantile(pmeasures$Sensitivity1, 0.025),
+                quantile(pmeasures$Sensitivity1, 0.975)),
         logfile)
-  write(sprintf('Sensitivity_cipa_2: %.4f (%.4f, %.4f)',
-                median(pmeasures$Sensitivity_cipa_2),
-                quantile(pmeasures$Sensitivity_cipa_2, 0.025),
-                quantile(pmeasures$Sensitivity_cipa_2, 0.975)),
+  write(sprintf('Sensitivity2: %.4f (%.4f, %.4f)',
+                median(pmeasures$Sensitivity2),
+                quantile(pmeasures$Sensitivity2, 0.025),
+                quantile(pmeasures$Sensitivity2, 0.975)),
         logfile)
-  write(sprintf('Specificity_cipa_1: %.4f (%.4f, %.4f)',
-                median(pmeasures$Specificity_cipa_1),
-                quantile(pmeasures$Specificity_cipa_1, 0.025),
-                quantile(pmeasures$Specificity_cipa_1, 0.975)),
+  write(sprintf('Specificity1: %.4f (%.4f, %.4f)',
+                median(pmeasures$Specificity1),
+                quantile(pmeasures$Specificity1, 0.025),
+                quantile(pmeasures$Specificity1, 0.975)),
         logfile)
-  write(sprintf('Specificity_cipa_2: %.4f (%.4f, %.4f)',
-                median(pmeasures$Specificity_cipa_2),
-                quantile(pmeasures$Specificity_cipa_2, 0.025),
-                quantile(pmeasures$Specificity_cipa_2, 0.975)),
+  write(sprintf('Specificity2: %.4f (%.4f, %.4f)',
+                median(pmeasures$Specificity2),
+                quantile(pmeasures$Specificity2, 0.025),
+                quantile(pmeasures$Specificity2, 0.975)),
         logfile)
   write(sprintf('LR_pos_th1: %.4f (%.4f, %.4f)',
                 median(pmeasures$LR_pos_th1),
@@ -1212,15 +1208,15 @@ writepmeasuresfun <- function(pmeasures,
                 quantile(pmeasures$LR_neg_th2, 0.025),
                 quantile(pmeasures$LR_neg_th2, 0.975)),
         logfile)
-  write(sprintf('F1score_cipa_1: %.4f (%.4f, %.4f)',
-                median(pmeasures$F1score_cipa_1),
-                quantile(pmeasures$F1score_cipa_1, 0.025),
-                quantile(pmeasures$F1score_cipa_1, 0.975)),
+  write(sprintf('F1score_th1: %.4f (%.4f, %.4f)',
+                median(pmeasures$F1score_th1),
+                quantile(pmeasures$F1score_th1, 0.025),
+                quantile(pmeasures$F1score_th1, 0.975)),
         logfile)
-  write(sprintf('F1score_cipa_2: %.4f (%.4f, %.4f)',
-                median(pmeasures$F1score_cipa_2),
-                quantile(pmeasures$F1score_cipa_2, 0.025),
-                quantile(pmeasures$F1score_cipa_2, 0.975)),
+  write(sprintf('F1score_th2: %.4f (%.4f, %.4f)',
+                median(pmeasures$F1score_th2),
+                quantile(pmeasures$F1score_th2, 0.025),
+                quantile(pmeasures$F1score_th2, 0.975)),
         logfile)
   write(sprintf('Classification_error: %.4f (%.4f, %.4f)',
                 mean(pred_error),
@@ -1833,23 +1829,25 @@ fitandgetTMS <- function(training_data,testing_data,formula,dimension,max_attemp
 returnNA <- function(log_filename,dimension = NA){
   summarydf <- data.frame(
     Feature_Pair = log_filename,
-    Accuracy_cipa_1 = NA,
-    Accuracy_cipa_2 = NA,
+    Accuracy_th1 = NA,
+    Accuracy_th2 = NA,
     AUC1 = NA,
     AUC2 = NA,
-    Sensitivity_cipa_1 = NA,
-    Sensitivity_cipa_2 = NA,
-    Specificity_cipa_1 = NA,
-    Specificity_cipa_2 = NA,
+    Sensitivity1 = NA,
+    Sensitivity2 = NA,
+    Specificity1 = NA,
+    Specificity2 = NA,
     LR_pos_th1 = NA,
     LR_pos_th2 = NA,
     LR_neg_th1 = NA,
     LR_neg_th2 = NA,
-    F1score_cipa_1 = NA,
-    F1score_cipa_2 = NA,
+    F1score_th1 = NA,
+    F1score_th2 = NA,
     Classification_error = NA,
     pairwise = NA,
-    Rank_score = NA
+    Rank_score = NA,
+    th1 = NA,
+    th2 = NA
   )
   
   if (!is.na(dimension)) {
@@ -2223,7 +2221,6 @@ evaluate_drug_combination <- function(drug_candidates, drug_pair, drug_index, si
   if (!is_training_all_error) {
     
     # Initialize data frames
-    # all28df <- data.frame(metric=c("AUC1","AUC2","Pairwise","LR1plus","LR1minus","LR2plus","LR2minus","Mean_error"))
     all28df <- data.frame(metric=c("AUC1","AUC2","Pairwise","LR1plus","LR1minus","LR2plus","LR2minus","Mean_error",
                                    "AUC1_LOOCV","AUC2_LOOCV","Pairwise_LOOCV","LR1plus_LOOCV","LR1minus_LOOCV","LR2plus_LOOCV","LR2minus_LOOCV","Mean_error_LOOCV",
                                    "AUC1_training","AUC2_training","Pairwise_training","LR1plus_training","LR1minus_training","LR2plus_training","LR2minus_training","Mean_error_training",
