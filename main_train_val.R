@@ -27,19 +27,19 @@ dimension <-1  # can be changed to 2 (double-biomarker); or 3; 4; 5; 6
 pairsdf <- pairsdfinitfun(features = features, units = units, dimension = dimension)
 
 # Create the results folder
-results_folder <- "results/single_biom"
+results_folder <- "results_ordstatic/single_biom"
 
-# Choose whether data needs to be normalized.
-is_normalized <- FALSE  #
+# Choose whether data needs to be normalized
+is_normalized <- FALSE
 
-# Choose how many attempts are required before skipping the fitting process (when divergence is found)
-max_attempts <- 10000 # 1000
+# Choose how many attemps required before skipping the fitting process (when divergence is found)
+max_attempts <- 10000 # 10, 1000, 10000
 
-# Choose how many tests are required for evaluating model performance
+# Choose how many tests required for evaluating model performance
 num_tests <- 10000 #1, 1000, 10000
 
 # Register parallel backend
-numCores <- 6
+numCores <- 8
 
 # Check if the folder exists
 if (!dir.exists(results_folder)) {
@@ -109,7 +109,7 @@ base_cols <- setdiff(names(summarydf), med_cols)   # all non-median columns
 # -------------------------------------------------------
 desired_order <- c(
   "FEATURE_COL_PLACEHOLDER",
-  "logLik", "Alpha_1", "Alpha_2", "Beta_1",
+  "logLik", "Alpha_1", "Alpha_2", "Beta_1", "th1", "th2",
   "AUC1", "AUC2", "pairwise",
   "LR_pos_th1", "LR_pos_th2", "LR_neg_th1", "LR_neg_th2",
   "Classification_error",
@@ -145,7 +145,7 @@ write.csv(summarydf_out,
 
 # --- summary_median.csv ---
 meta_cols        <- intersect(
-  c("logLik", grep("^Alpha_|^Beta_", names(summarydf), value = TRUE)),
+  c("logLik", grep("^Alpha_|^Beta_", names(summarydf), value = TRUE), "th1", "th2"),
   names(summarydf)
 )
 median_sel_cols  <- intersect(c(feature_col_name, meta_cols, med_cols), names(summarydf))
