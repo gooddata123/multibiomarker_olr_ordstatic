@@ -1,3 +1,4 @@
+library(grid)
 # Function to calculate sigmoid
 sigmoid <- function(x){
   return(1.0/(1.0 + exp(-x)))
@@ -129,7 +130,7 @@ run_all_testing <- function(results_folder = 'results',
     th2 <- -th1
     
     # Plot TMS for training dataset
-    label_colors <- c("low" = "green4", "intermediate" = "orange", "high" = "red")
+    label_colors <- c("low" = "green4", "intermediate" = "#fba445", "high" = "#B22222")
     training$risk <- ifelse(training$label == 1, "low",
                             ifelse(training$label == 2, "intermediate", "high"))
     
@@ -139,6 +140,7 @@ run_all_testing <- function(results_folder = 'results',
     
     # if (!is_single) {
     tms_name <- "TMS"
+    tms_axis_label <- build_tms_label(features_vector, is_normalized = is_normalized)
     filename_training <- paste(results_folder,"/",paste(log_filename, "training_development_tms.jpg", sep="_"), sep = "")
     filename_testing <- paste(results_folder,"/",paste(log_filename, "testing_development_tms.jpg", sep="_"), sep = "")
     
@@ -147,16 +149,18 @@ run_all_testing <- function(results_folder = 'results',
                th1 = th1,
                th2 = th2,
                label_colors = label_colors,
-               title = "Training dataset",
+               title = "Training",
                file_name = filename_training,
-               tms_name = "TMS")
+               tms_name = "TMS",
+               tms_label = tms_axis_label)
     tmsplotfun(data = testing,
                th1 = th1,
                th2 = th2,
                label_colors = label_colors,
-               title = "Testing dataset",
+               title = "Testing",
                file_name = filename_testing,
-               tms_name = "TMS")
+               tms_name = "TMS",
+               tms_label = tms_axis_label)
   } else {
     if (dimension == 2) {
       scatterplotfun(data = training,
@@ -220,8 +224,7 @@ run_all_testing <- function(results_folder = 'results',
     temp_return["LR_neg_th2_med"]                    <- NA
     temp_return["F1score_th1_med"]                        <- NA
     temp_return["F1score_th2_med"]                        <- NA
-    temp_return["Classification_error_median_med"]           <- NA
-    temp_return["Classification_error_mean_med"]             <- NA
+    temp_return["Mean_classification_error_med"]           <- NA
     temp_return["pairwise_med"]      <- NA
     temp_return["Rank_score_training_med"]                   <- NA
     temp_return["Accuracy_th1_training_med"]              <- NA
@@ -238,8 +241,7 @@ run_all_testing <- function(results_folder = 'results',
     temp_return["LR_neg_th2_training_med"]           <- NA
     temp_return["F1score_th1_training_med"]               <- NA
     temp_return["F1score_th2_training_med"]               <- NA
-    temp_return["Classification_error_median_training_med"]  <- NA
-    temp_return["Classification_error_mean_training_med"]    <- NA
+    temp_return["Mean_classification_error_training_med"]  <- NA
     
     return(temp_return)
   }
@@ -409,8 +411,7 @@ run_all_testing <- function(results_folder = 'results',
   summarydf["LR_neg_th2_med"]                    <- quantile(pmeasures_testing$LR_neg_th2, 0.5)
   summarydf["F1score_th1_med"]                        <- quantile(pmeasures_testing$F1score_th1,    0.5)
   summarydf["F1score_th2_med"]                        <- quantile(pmeasures_testing$F1score_th2,    0.5)
-  summarydf["Classification_error_median_med"]           <- median(pred_err_testing)
-  summarydf["Classification_error_mean_med"]             <- mean(pred_err_testing)
+  summarydf["Mean_classification_error_med"]           <- mean(pred_err_testing)
   summarydf["pairwise_med"]      <- quantile(pmeasures_testing$Pairwise,          0.5)
   
   # Training — median metrics
@@ -429,8 +430,7 @@ run_all_testing <- function(results_folder = 'results',
   summarydf["LR_neg_th2_training_med"]           <- quantile(pmeasures_training$LR_neg_th2, 0.5)
   summarydf["F1score_th1_training_med"]               <- quantile(pmeasures_training$F1score_th1,    0.5)
   summarydf["F1score_th2_training_med"]               <- quantile(pmeasures_training$F1score_th2,    0.5)
-  summarydf["Classification_error_median_training_med"]  <- median(pred_err_training)
-  summarydf["Classification_error_mean_training_med"]    <- mean(pred_err_training)
+  summarydf["Mean_classification_error_training_med"]  <- mean(pred_err_training)
   
   return(summarydf)
 }
@@ -534,12 +534,13 @@ run_all_training <- function(results_folder = 'results',
     th2 <- -th1
     
     # Plot TMS for training dataset
-    label_colors <- c("low" = "green4", "intermediate" = "orange", "high" = "red")
+    label_colors <- c("low" = "green4", "intermediate" = "#fba445", "high" = "#B22222")
     all_data$risk <- ifelse(all_data$label == 1, "low",
                             ifelse(all_data$label == 2, "intermediate", "high"))
     
     # if (!is_single) {
     tms_name <- "TMS"
+    tms_axis_label <- build_tms_label(features_vector, is_normalized = is_normalized)
     filename_training <- paste(results_folder,"/",paste(log_filename, "dataset_tms.jpg", sep="_"), sep = "")
     
     # Plot TMS for training dataset
@@ -549,7 +550,8 @@ run_all_training <- function(results_folder = 'results',
                label_colors = label_colors,
                title = "Training all dataset",
                file_name = filename_training,
-               tms_name = "TMS")
+               tms_name = "TMS",
+               tms_label = tms_axis_label)
   } else {
     if (dimension == 2) {
       scatterplotfun(data = all_data,
@@ -933,40 +935,97 @@ pmeasuresfun_loocv <- function(data, label_values, tms_name = "TMS", all_or_looc
   return(pmeasures)
 }
 
-tmsplotfun <- function(data, th1, th2, label_colors, title, file_name, tms_name, tms_unit){
+# ─── Modified tmsplotfun: accepts optional tms_label for axis text ────────────
+# Backward compatible: if tms_label is not passed, axis label falls back to tms_name
+# (so existing callers continue to work without changes).
+tmsplotfun <- function(data, th1, th2, label_colors, title, file_name,
+                       tms_name, tms_unit, tms_label = NULL){
   # Known TdP risk classification (CiPA reference list)
   high_risk_drugs <- c("sotalol","quinidine","dofetilide","bepridil",
                        "vandetanib","ibutilide","disopyramide","azimilide")
   low_risk_drugs  <- c("verapamil","ranolazine","mexiletine","diltiazem",
                        "tamoxifen","nitrendipine","nifedipine","metoprolol","loratadine")
-
+  
   # Order drugs by label (low -> intermediate -> high) for y-axis
   data$drug_name <- factor(data$drug_name,
                            levels = unique(data$drug_name[order(data$label)]))
-
-  # Build y-axis label color vector matching factor level order
-  drug_levels    <- levels(data$drug_name)
-  yaxis_colors   <- ifelse(drug_levels %in% high_risk_drugs, "red",
-                    ifelse(drug_levels %in% low_risk_drugs,  "green4", "orange"))
-
-  tms  <- tms_name
+  
+  drug_levels  <- levels(data$drug_name)
+  yaxis_colors <- ifelse(drug_levels %in% high_risk_drugs, "#B22222",
+                         ifelse(drug_levels %in% low_risk_drugs,  "green4", "#fba445"))
+  
+  # Use tms_label for the visible axis label if supplied; otherwise fall back
+  # to tms_name (the data-frame column name) — preserves old behavior.
+  axis_label <- if (is.null(tms_label)) tms_name else tms_label
+  
   plot <- ggplot(data, aes_string(x = tms_name, y = "drug_name", fill = "risk")) +
-    geom_boxplot(color = "black", width = 0.5, size = 0.2,
+    geom_boxplot(color = "black", width = 0.5, size = 0.08, fatten = 2,
                  outlier.size = 0.5, outlier.shape = NA) +
-    labs(title = title, x = tms, y = "") +
-    geom_vline(xintercept = th1, linetype = "dashed", color = "blue", size = 1) +
-    geom_vline(xintercept = th2, linetype = "dashed", color = "red",  size = 1) +
+    labs(title = title, x = axis_label, y = "") +
+    geom_vline(xintercept = th1, linetype = "dashed", color = "green4", size = 0.7) +
+    geom_vline(xintercept = th2, linetype = "dashed", color = "#B22222", size = 0.7) +
     scale_fill_manual(values = label_colors) +
+    theme_bw() +
     theme(
-      plot.title       = element_text(size = 16),
-      axis.title.x     = element_text(size = 14),
-      axis.title.y     = element_text(size = 14),
-      axis.text.x      = element_text(size = 12),
-      axis.text.y      = element_text(size = 12, colour = yaxis_colors, face = "bold"),
-      legend.title     = element_text(size = 10),
-      legend.text      = element_text(size = 10)
+      plot.title       = element_text(size = 12),    # was 16
+      axis.title.x     = element_text(size = 11),    # was 14
+      axis.title.y     = element_text(size = 11),    # was 14
+      axis.text.x      = element_text(size = 9, colour = "black"),               # was 12
+      axis.text.y      = element_text(size = 10, colour = yaxis_colors, face = "bold"),  # was 12
+      legend.title     = element_text(size = 9),     # was 10
+      legend.text      = element_text(size = 9),     # was 10
+      panel.grid.minor = element_blank(),
+      panel.grid.major = element_line(colour = "gray80", linetype = "dashed", linewidth = 0.2)
     )
-  ggsave(file_name, plot, width = 6, height = 4, dpi = 900)
+  
+  # ---- Threshold annotation placed OUTSIDE the panel ----
+  # centered ~y=0.55, so Th1/Th2 go below. Tweak these 5 NPC values to nudge.
+  x_seg_l <- 0.81    # dashed segment: left x
+  x_seg_r <- 0.838    # dashed segment: right x
+  x_lbl   <- 0.85    # text starts here
+  y_th1   <- 0.360    # Th1 row (upper)
+  y_th2   <- 0.310    # Th2 row (lower)
+  
+  
+  th_annot <- grid::grobTree(
+    grid::linesGrob(x = grid::unit(c(x_seg_l, x_seg_r), "npc"),
+                    y = grid::unit(c(y_th1,   y_th1),   "npc"),
+                    gp = grid::gpar(col = "green4",  lty = "dashed", lwd = 1.2)),
+    grid::textGrob(label = sprintf("Th1 = %.4f", th1),
+                   x = grid::unit(x_lbl, "npc"), y = grid::unit(y_th1, "npc"),
+                   hjust = 0, gp = grid::gpar(col = "black", fontsize = 9)),
+    grid::linesGrob(x = grid::unit(c(x_seg_l, x_seg_r), "npc"),
+                    y = grid::unit(c(y_th2,   y_th2),   "npc"),
+                    gp = grid::gpar(col = "#B22222", lty = "dashed", lwd = 1.2)),
+    grid::textGrob(label = sprintf("Th2 = %.4f", th2),
+                   x = grid::unit(x_lbl, "npc"), y = grid::unit(y_th2, "npc"),
+                   hjust = 0, gp = grid::gpar(col = "black", fontsize = 9))
+  )
+  
+  jpeg(file_name, width = 6, height = 4, units = "in", res = 900, quality = 100)
+  grid::grid.newpage()
+  grid::grid.draw(ggplot2::ggplotGrob(plot))
+  grid::grid.draw(th_annot)
+  dev.off()
+}
+
+
+# ─── Helper: build the axis label string from a features vector ───────────────
+# Examples:
+#   build_tms_label("qNet")                                 -> "TMS of qNet"
+#   build_tms_label(c("qNet","INaL_AUC"))                   -> "TMS of qNet + INaL_AUC"
+#   build_tms_label(c("qNet","APD90","INaL_AUC"))           -> "TMS of (qNet + APD90 + INaL_AUC)"
+#   build_tms_label(c("qNet","INaL_AUC"), is_normalized=TRUE)
+#     -> "TMS of qNet + INaL_AUC (standardized)"
+build_tms_label <- function(features_vector, is_normalized = FALSE) {
+  features_str <- paste(features_vector, collapse = " + ")
+  base <- if (length(features_vector) >= 3) {
+    sprintf("TMS of (%s)", features_str)
+  } else {
+    sprintf("TMS of %s", features_str)
+  }
+  if (is_normalized) base <- paste0(base, " (standardized)")
+  base
 }
 
 scatterplotfun <- function(data, 
@@ -1033,14 +1092,14 @@ scatterplotfun <- function(data,
        cex.main = 1.5, 
        cex = 0.5)
   if (is_legend) {
-    legend("bottomright", legend = c("Low", "Intermediate", "High"), fill = c("green4", "orange", "red"))
+    legend("bottomright", legend = c("Low", "Intermediate", "High"), fill = c("green4", "#fba445", "#B22222"))
   }
   points(data[,idx_model_1][data$label == "1"], data[,idx_model_2][data$label == "1"], col = "green4", cex = 0.5)
-  points(data[,idx_model_1][data$label == "2"], data[,idx_model_2][data$label == "2"], col = "orange", cex = 0.5)
-  points(data[,idx_model_1][data$label == "3"], data[,idx_model_2][data$label == "3"], col = "red", cex = 0.5)
+  points(data[,idx_model_1][data$label == "2"], data[,idx_model_2][data$label == "2"], col = "#fba445", cex = 0.5)
+  points(data[,idx_model_1][data$label == "3"], data[,idx_model_2][data$label == "3"], col = "#B22222", cex = 0.5)
   if (is_converged) {
-    abline(a = c1, b = m, col = "blue", lty = 2, lwd = 2)  # Replace 'a' with the intercept if needed
-    abline(a = c2, b = m, col = "red", lty = 2, lwd = 2)  # Replace 'a' with the intercept if needed
+    abline(a = c1, b = m, col = "green4", lty = 2, lwd = 2)  # Replace 'a' with the intercept if needed
+    abline(a = c2, b = m, col = "#B22222", lty = 2, lwd = 2)  # Replace 'a' with the intercept if needed
   }
   dev.off()
 }
