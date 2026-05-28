@@ -7,39 +7,39 @@ library(doParallel)
 source("functions_with_median.R")
 
 # Declare features and units
-
 features <- c(
-  "qnet",	"inal_auc",	"ical_auc",	"apd90",	"apd50",	"apd_tri",	"cad90",	"cad50",
-  "cad_tri",	"dvmdt_repol",	"dvmdt_peak",	"vm_peak",	"vm_dia",	"ca_peak",	"ca_dia"
+  "qNet",	"INaL_AUC",	"ICaL_AUC",	"APD90",	"APD50",	"APD_tri",	"CaD90",	"CaD50",
+  "CaD_tri",	"dVmdt_repol",	"dVmdt_peak",	"Vm_peak",	"Vm_dia",	"Ca_peak",	"Ca_dia"
 )
-
 units <-c ("", "", "", "", "", "", "", "",
            "", "", "", "", "", "", "")
 
-# Declare paths for the file input
-filepath_training <- "data/ordstatic_zscore_train.csv"
-filepath_testing <- "data/ordstatic_zscore_val.csv"
+# Declare the file paths
+## For 12-16 train-test
+### for single-biomarker
+filepath_training <- "data/ordstatic_zscore_train_copy.csv" #(z-core normalized feature of train-set; results from in silico sim)
+filepath_testing <- "data/ordstatic_zscore_val_copy.csv" #(z-core normalized feature of test-set; results from in silico sim)
 
 # Set feature dimension (how many feature pair)
-dimension <-1  # can be changed to 2 (double-biomarker); or 3; 4; 5; 6
+dimension <-1 #number of feature combination as input to OLR (1: one feature; 2: 2 combined features)
 
 # Create pairsdf with all unique combinations
 pairsdf <- pairsdfinitfun(features = features, units = units, dimension = dimension)
 
 # Create the results folder
-results_folder <- "results_ordstatic/single_biom"
+results_folder <- "results_ordstatic/six_biom"
 
 # Choose whether data needs to be normalized
-is_normalized <- FALSE
+is_normalized <- FALSE #set as False because the input data is already normalized
 
 # Choose how many attemps required before skipping the fitting process (when divergence is found)
-max_attempts <- 10000 # 10, 1000, 10000
+max_attempts <- 1000 # 10, 1000, 10000
 
 # Choose how many tests required for evaluating model performance
 num_tests <- 10000 #1, 1000, 10000
 
 # Register parallel backend
-numCores <- 8
+numCores <- 6
 
 # Check if the folder exists
 if (!dir.exists(results_folder)) {
@@ -82,13 +82,13 @@ summarydf <- foreach( pair_id = 1:nrow(pairsdf),
                         testing <- read_csv(filepath_testing, show_col_types = FALSE)
                         
                         result <- run_all_testing (results_folder = results_folder,
-                                                    training = training,
-                                                    testing = testing,
-                                                    features_vector = features_vector,
-                                                    units_vector = units_vector,
-                                                    is_normalized = is_normalized,
-                                                    max_attempts = max_attempts,
-                                                    num_tests = num_tests)
+                                                   training = training,
+                                                   testing = testing,
+                                                   features_vector = features_vector,
+                                                   units_vector = units_vector,
+                                                   is_normalized = is_normalized,
+                                                   max_attempts = max_attempts,
+                                                   num_tests = num_tests)
                         
                         # Return the result
                         result
@@ -97,38 +97,38 @@ summarydf <- foreach( pair_id = 1:nrow(pairsdf),
 # Split wide summarydf into two output CSV files:
 #   summary.csv        — worst-case CI metrics (original behaviour)
 #   summary_median.csv — median (50th percentile) metrics
-# Shared metadata columns (logLik, Alpha_i, Beta_i) appear in both files.
 # -------------------------------------------------------
 med_cols  <- grep("_med$", names(summarydf), value = TRUE)
-base_cols <- setdiff(names(summarydf), med_cols)   # all non-median columns
+base_cols <- setdiff(names(summarydf), med_cols)
 
 # -------------------------------------------------------
 # Desired column order for BOTH output files.
-# "feature_col_name" is used as a placeholder for the first column
-# (actual name depends on dimension, e.g. "feature_1").
+# "Mean_classification_error" replaces "Classification_error"
+# in both files for naming consistency.
 # -------------------------------------------------------
 desired_order <- c(
   "FEATURE_COL_PLACEHOLDER",
   "logLik", "Alpha_1", "Alpha_2", "Beta_1", "th1", "th2",
   "AUC1", "AUC2", "pairwise",
   "LR_pos_th1", "LR_pos_th2", "LR_neg_th1", "LR_neg_th2",
-  "Classification_error",
+  "Mean_classification_error",
+  "Rank_score",
   "Sensitivity1", "Sensitivity2",
   "Specificity1", "Specificity2",
-  "Accuracy_th1",    "Accuracy_th2",
-  "F1score_th1",     "F1score_th2",
-  "Rank_score",
+  "Accuracy_th1", "Accuracy_th2",
+  "F1score_th1",  "F1score_th2",
   "AUC1_training", "AUC2_training",
   "LR_pos_th1_training", "LR_pos_th2_training",
   "LR_neg_th1_training", "LR_neg_th2_training",
-  "Classification_error_training",
+  "Mean_classification_error_training",
+  "Rank_score_training",
   "Sensitivity1_training", "Sensitivity2_training",
   "Specificity1_training", "Specificity2_training",
-  "F1score_th1_training",     "F1score_th2_training",
-  "Rank_score_training"
+  "Accuracy_th1_training", "Accuracy_th2_training",
+  "F1score_th1_training",  "F1score_th2_training"
 )
 
-# Helper: reorder a dataframe by desired_order, appending any leftover cols
+# Helper: reorder df by desired_order, appending leftover cols at the end
 reorder_cols <- function(df, desired, feature_col) {
   ordered  <- sub("FEATURE_COL_PLACEHOLDER", feature_col, desired)
   present  <- intersect(ordered, names(df))
@@ -136,27 +136,45 @@ reorder_cols <- function(df, desired, feature_col) {
   df[, c(present, leftover), drop = FALSE]
 }
 
-# --- summary.csv ---
+# -------------------------------------------------------
+# --- summary.csv (worst-case) ---
+# -------------------------------------------------------
 feature_col_name <- names(summarydf[, base_cols])[1]   # e.g. "feature_1"
-summarydf_out    <- reorder_cols(summarydf[, base_cols], desired_order, feature_col_name)
+summarydf_out    <- summarydf[, base_cols, drop = FALSE]
+
+# Rename Classification_error -> Mean_classification_error for naming consistency
+names(summarydf_out)[names(summarydf_out) == "Classification_error"] <-
+  "Mean_classification_error"
+names(summarydf_out)[names(summarydf_out) == "Classification_error_training"] <-
+  "Mean_classification_error_training"
+
+summarydf_out <- reorder_cols(summarydf_out, desired_order, feature_col_name)
 write.csv(summarydf_out,
           file.path(results_folder, "summary.csv"),
           row.names = FALSE)
 
-# --- summary_median.csv ---
-meta_cols        <- intersect(
+# -------------------------------------------------------
+# --- summary_median.csv (median-based) ---
+# -------------------------------------------------------
+meta_cols <- intersect(
   c("logLik", grep("^Alpha_|^Beta_", names(summarydf), value = TRUE), "th1", "th2"),
   names(summarydf)
 )
 median_sel_cols  <- intersect(c(feature_col_name, meta_cols, med_cols), names(summarydf))
 summarydf_median <- summarydf[, median_sel_cols, drop = FALSE]
+
+# Strip "_med" suffix from all median columns
 names(summarydf_median) <- sub("_med$", "", names(summarydf_median))
 
-# Rename Classification_error_median -> Classification_error to match summary.csv
+# Rename median classification error columns to match summary.csv naming
 names(summarydf_median)[names(summarydf_median) == "Classification_error_median"] <-
-  "Classification_error"
+  "Mean_classification_error"
 names(summarydf_median)[names(summarydf_median) == "Classification_error_median_training"] <-
-  "Classification_error_training"
+  "Mean_classification_error_training"
+names(summarydf_median)[names(summarydf_median) == "Mean_classification_error_median"] <-
+  "Mean_classification_error"
+names(summarydf_median)[names(summarydf_median) == "Mean_classification_error_median_training"] <-
+  "Mean_classification_error_training"
 
 summarydf_median <- reorder_cols(summarydf_median, desired_order, feature_col_name)
 write.csv(summarydf_median,
